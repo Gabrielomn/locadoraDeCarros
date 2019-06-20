@@ -6,7 +6,7 @@
 	( V )	 Existem clientes vips e clientes nao vips
 	( V )  Clientes podem alugar ate 3 carros
 	( X )  Se um cliente tem duas locacoes no seu nome simultaneamente ele vira um cliente VIP
-	( X )  Apenas clientes vip podem alugar carros importados
+	( ? )  Apenas clientes vip podem alugar carros importados
 	( X )  As devolucoes em dia e atrasadas devem ser registradas no sistema
 	( X )	 Um cliente deixa de ser vip se apresentar alguma devolucao em atraso
 	( V )	Cliente precisa ter nome e telefone para poder fazer a locacao ou reserva de um carro
@@ -61,8 +61,32 @@ fact {
 
 	--Numero de carros eh menor que o numero de Clientes
 	(#(Locadora.carros)) < (#Cliente)
+
+	/*nao tenho ctz se isso ta funcionando como deveria, mas eh para garantir que todos os carros importados
+	so sao alugados por clientes vip.*/
+	all c:Carro | (ehImportado[c] and estaAlugado[c]) implies ehVip[c.~alugados]
+
+	/*Nao sei se da pra fazer esse negocio de cliente se tornar vip, mas por enquanto isso garante que qualquer um que
+	tenha dois ou mais carros alugados eh vip*/
+	all c:Cliente | #(c.alugados) >= 2 implies ehVip[c]
+}
+
+pred ehVip[cliente : Cliente]{
+
+	#(cliente & ClienteVip) = 1
+
+}
+
+pred estaAlugado[carro : Carro]{
+	#(carro.~alugados) >= 1
+}
+
+pred ehImportado[carro : Carro]{
+
+	#(carro & CarroImportado) = 1
+
 }
 
 
 pred show[]{}
-run show for 5
+run show for 9
