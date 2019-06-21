@@ -5,7 +5,7 @@
 	( V )	 Existem carros nacionais e importados
 	( V )	 Existem clientes vips e clientes nao vips
 	( V )  Clientes podem alugar ate 3 carros
-	( ? )  Se um cliente tem duas locacoes no seu nome simultaneamente ele vira um cliente VIP
+	( V )  Se um cliente tem duas locacoes no seu nome simultaneamente ele vira um cliente VIP
 	( ? )  Apenas clientes vip podem alugar carros importados
 	( ? )  As devolucoes em dia e atrasadas devem ser registradas no sistema
 	( ? )	 Um cliente deixa de ser vip se apresentar alguma devolucao em atraso
