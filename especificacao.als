@@ -87,9 +87,8 @@ fact {
 	so sao alugados por clientes vip.*/
 	all c:Carro | (ehImportado[c] and estaAlugado[c]) implies ehVip[c.~alugados]
 
-	/*Nao sei se da pra fazer esse negocio de cliente se tornar vip, mas por enquanto isso garante que qualquer um que
-	tenha dois ou mais carros alugados eh vip*/
-	all c:ClienteCadastrado | #(c.alugados) >= 2 implies ehVip[c]
+	--Um Cliente eh VIP se, e somente se, tiver mais de dois carros alugados.
+	all c:ClienteCadastrado | #(c.alugados) >= 2 iff ehVip[c]
 
 	--Apenas clientes nao cadastrados podem se cadastrar, e clientes ja cadastrados nao podem se cadastrar
 	all c:Cliente | (ehCadastrado[c]) implies (#(c.cadastrar) = 0)
