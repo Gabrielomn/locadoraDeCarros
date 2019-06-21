@@ -14,7 +14,7 @@
 	( X )	 Deve ser possivel reservar um carro que esteja alugado no momento.
 	( V ) Existe um numero limitado de veiculos e esse numero eh menor que o numero de clientes
 	( V ) Um veiculo so pode ser alugado por um unico cliente por vez
-	( X ) Depois que o carro eh devolvido ele passa por uma limpeza antes de ser alugado novamente.
+	( ? ) Depois que o carro eh devolvido ele passa por uma limpeza antes de ser alugado novamente.
 
 
 	
@@ -35,7 +35,9 @@ abstract sig Devolucao{
 }
 sig DevolucaoEmDia extends Devolucao{}
 sig DevolucaoAtrasada extends Devolucao{}
-abstract sig Carro {}
+abstract sig Carro {
+	limpo: lone Limpo
+}
 sig CarroImportado extends Carro{}
 sig CarroNacional extends Carro{}
 
@@ -61,6 +63,7 @@ sig Telefone {}
 sig Alugar {}
 sig AlugarNac{}
 one sig Cadastrar{}
+one sig Limpo{}
 sig Reservar{}
 
 
@@ -92,13 +95,16 @@ fact {
 	all c:Cliente | (ehCadastrado[c]) implies (#(c.cadastrar) = 0)
 	all c:Cliente | (naoEhCadastrado[c]) implies (#c.cadastrar = 1)
 
-	--A ideia aqui eh que se ele ja esta reservado, entao significa que ele esta alugado no momento
-	all c:Carro | some c.~reservado implies estaAlugado[c]
+	--A ideia aqui eh que se ele ja esta reservado, entao significa que ele esta alugado no momento e que o carro não está mais limpo
+	all c:Carro | some c.~reservado implies (estaAlugado[c] and (#(c.limpo) = 0))
 
 	--Dessa forma se o cliente apresenta uma devolucao atrasada, ele nao eh mais Vip
 	all d:DevolucaoAtrasada | !ehVip[d.cliente]
 
 	all c:ClienteCadastrado | (#c.~solicitante != 0 and !ehVip[c]) implies naoEhReservaDeImportado[c.~solicitante]
+
+	--Quando o carro é devolvido ele é limpo
+	all d:Devolucao | (#(d.carro.limpo) = 1)
 
 }
 
@@ -122,6 +128,7 @@ pred ehVip[cliente : ClienteCadastrado]{
 
 pred estaAlugado[carro : Carro]{
 	#(carro.~alugados) >= 1
+	#(carro.limpo) = 1
 }
 
 pred ehImportado[carro : Carro]{
