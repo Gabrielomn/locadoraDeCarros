@@ -68,6 +68,9 @@ one sig Limpo{}
 
 
 fact {
+
+	all d:Devolucao | one d.~devolucoes
+
 	--Todos os carros estao ligados a locadora
 	all c:Carro | one c.~carros
 
@@ -107,7 +110,7 @@ fact {
 	--A ideia aqui eh que se ele ja esta reservado, entao significa que ele esta alugado no momento
 	all c:Carro | estaReservado[c] implies estaAlugado[c]
 
-	all c:Carro | estaAlugado[c] implies estaLimpo[c]
+	all c:Carro | estaAlugado[c] implies estaSujo[c]
 
 	--Dessa forma se o cliente apresenta uma devolucao ou aluguel atrasado, ele nao eh mais Vip
 	all d:DevolucaoAtrasada | !ehVip[d.cliente]
@@ -129,8 +132,8 @@ pred estaReservado[carro: Carro]{
 
 }
 
-pred estaLimpo[carro: Carro]{
-	(#carro.limpo) = 1
+pred estaSujo[carro: Carro]{
+	(#carro.limpo) = 0
 }
 
 pred naoEhCadastrado[cliente: Cliente]{
