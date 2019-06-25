@@ -1,0 +1,42 @@
+MODULE main
+VAR
+	Cliente : process cliente();
+	Carro : process carro();
+	Aluguel : {recusado, atrasado, emDia, devolvido};
+	Reserva : boolean;
+ASSIGN
+	init(Aluguel) := emDia;
+	next(Aluguel) :=
+	case
+		(Cliente.estado = comum & Carro.estado = importado) : {recusado};
+		(Cliente.estado = vip & Carro.limpo = TRUE) : {devolvido};
+		(Cliente.estado = comum & Carro.limpo = TRUE & Carro.estado = nacional) : {devolvido};
+		(Cliente.estado = vip & Carro.limpo = FALSE) : {recusado, emDia, atrasado};
+		(Cliente.estado = comum & Carro.limpo = FALSE & Carro.estado != importado) : {recusado, emDia, atrasado};
+		
+	esac;
+	
+	init(Reserva) := boolean;
+	next(Reserva) :=
+	case
+		(Cliente.estado = vip & Aluguel = emDia | Aluguel = atrasado) : {TRUE};
+		(Cliente.estado = comum & Aluguel = emDia | Aluguel = atrasado & Carro.estado = nacional) : {TRUE};
+		TRUE : {FALSE};
+	esac;
+	
+
+MODULE carro()
+VAR
+	estado : {nacional, importado};
+	limpo : boolean;
+	
+ASSIGN
+	estado := {nacional, importado};
+	limpo := {TRUE, FALSE};
+	
+MODULE cliente()
+VAR
+	estado : {vip, comum};
+ASSIGN
+	estado := {vip, comum};
+	
