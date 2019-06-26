@@ -1,0 +1,39 @@
+MODULE main
+VAR
+	Cliente : {vip, comum};
+	Aluguel : {recusado, atrasado, emDia, devolvido};
+	Reserva : boolean;
+	Carro : {nacional, importado};
+	Limpo : boolean;
+ASSIGN
+	init(Carro) := {nacional, importado};
+	init(Limpo) := {TRUE, FALSE};
+	init(Cliente) := {vip, comum};
+	init(Reserva) := {FALSE, TRUE};
+	init(Aluguel) := emDia;
+	next(Aluguel) :=
+	case
+		(Cliente = comum & Carro = importado) : {recusado};
+		(Cliente = vip & Limpo = TRUE) : {devolvido};
+		(Cliente = comum & Limpo = TRUE & Carro = nacional) : {devolvido};
+		(Cliente = vip & Limpo = FALSE) : {recusado, emDia, atrasado};
+		(Cliente = comum & Limpo = FALSE & Carro != importado) : {recusado, emDia, atrasado};
+		
+	esac;
+	
+	next(Reserva) :=
+	case
+		(Cliente = vip & Aluguel = emDia) : {TRUE};
+		(Cliente = comum & Aluguel = emDia | Aluguel = atrasado & Carro = nacional) : {TRUE};
+		TRUE : {FALSE};
+	esac;
+	
+	next(Cliente) :=
+	case
+		(Cliente = vip & Aluguel = atrasado) : comum;
+		TRUE : Cliente;
+	esac;
+	
+LTLSPEC G((Cliente = vip) & (Aluguel = atrasado) -> X(Cliente = comum));
+
+	
