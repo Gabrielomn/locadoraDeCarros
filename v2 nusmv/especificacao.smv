@@ -1,31 +1,25 @@
 MODULE main
 VAR
+
 	Cliente : {vip, comum};
 	Aluguel : {recusado, atrasado, emDia, devolvido};
-	Reserva : boolean;
 	Carro : {nacional, importado};
 	Limpo : boolean;
+
 ASSIGN
 	init(Carro) := {nacional, importado};
 	init(Limpo) := {TRUE, FALSE};
 	init(Cliente) := {vip, comum};
-	init(Reserva) := {FALSE, TRUE};
-	init(Aluguel) := emDia;
+
 	next(Aluguel) :=
 	case
 		(Cliente = comum & Carro = importado) : {recusado};
-		(Cliente = vip & Limpo = TRUE) : {devolvido};
 		(Cliente = comum & Limpo = TRUE & Carro = nacional) : {devolvido};
+		(Cliente = comum & Limpo = FALSE & Carro = nacional) : {recusado, emDia, atrasado};	
+
+		(Cliente = vip & Limpo = TRUE) : {devolvido};
 		(Cliente = vip & Limpo = FALSE) : {recusado, emDia, atrasado};
-		(Cliente = comum & Limpo = FALSE & Carro != importado) : {recusado, emDia, atrasado};
-		
-	esac;
-	
-	next(Reserva) :=
-	case
-		(Cliente = vip & Aluguel = emDia) : {TRUE};
-		(Cliente = comum & Aluguel = emDia | Aluguel = atrasado & Carro = nacional) : {TRUE};
-		TRUE : {FALSE};
+
 	esac;
 	
 	next(Cliente) :=
@@ -34,6 +28,42 @@ ASSIGN
 		TRUE : Cliente;
 	esac;
 	
-LTLSPEC G((Cliente = vip) & (Aluguel = atrasado) -> X(Cliente = comum));
+--Sempre que o cliente for vip com aluguel atrasado, o cliente se tornará comum.
+SPEC AG((Cliente = vip) & (Aluguel = atrasado) -> AX(Cliente = comum));
 
-	
+--Sempre que o cliente for vip e o carro estiver limpo, o aluguel será devolvido.
+SPEC AG((Cliente = vip) & (Limpo = TRUE) -> AX(Aluguel = devolvido));
+
+--Sempre que o cliente for vip e o carro estiver sujo, o aluguel poderá ser recusado, em dia ou atrasado.
+SPEC AG((Cliente = vip) & (Limpo = FALSE) -> AX((Aluguel = recusado) | (Aluguel = emDia) | (Aluguel = atrasado)));
+
+--Sempre que o cliente for comum e o carro for importado, o aluguel poderá ser recusado ou atrasado.
+SPEC AG((Cliente = comum) & (Carro = importado) -> AX((Aluguel = recusado) | (Aluguel = atrasado)));
+
+--Sempre que o cliente for comum e o carro for nacional, o aluguel poderá ser recusado, em dia ou atrasado.
+SPEC AG((Cliente = comum) & (Carro = nacional) & (Limpo = FALSE) -> AX((Aluguel = emDia) | (Aluguel = recusado) | (Aluguel = atrasado)));
+
+--Sempre que o cliente for comum e o carro for nacional e limpo, o aluguel será devolvido.
+SPEC AG((Cliente = comum) & (Carro = nacional) & (Limpo = TRUE)  -> AX(Aluguel = devolvido));
+
+--Sempre que o carro for limpo, o aluguel poderá ser devolvido ou recusado.
+SPEC AG((Limpo = TRUE) -> AX((Aluguel = devolvido) | (Aluguel = recusado)));
+
+--Sempre que o carro for importado e o aluguel estiver em dia, então o cliente é vip.
+SPEC AG((Carro = importado) & (Aluguel = emDia)) -> (Cliente = vip);
+
+--Sempre que o carro for nacional e o aluguel estiver em dia, então o cliente poderá ser tanto vip quanto comum.
+SPEC AG((Carro = nacional) & (Aluguel = emDia)) -> (Cliente = comum) | (Cliente = vip); 
+
+--Sempre que o carro for importado e o aluguel for recusado e o cliente for vip, então o carro está sujo.
+SPEC AG((Carro = importado) & (Aluguel = recusado) & (Cliente = vip)) -> (Limpo = FALSE);
+
+--Sempre que o carro for importado e o aluguel estiver em dia e o cliente for vip, então o carro está sujo.
+SPEC AG((Carro = importado) & (Aluguel = emDia) & (Cliente = vip)) -> (Limpo = FALSE);
+
+--Sempre que o carro for nacional e o aluguel estiver em dia e o cliente for comum, então o carro está sujo.
+SPEC AG((Carro = nacional) & (Aluguel = emDia) & (Cliente = comum)) -> (Limpo = FALSE);
+
+--Sempre que o aluguel estiver atrasado, então o carro está sujo.
+SPEC AG(Aluguel = atrasado) -> (Limpo = FALSE);
+
