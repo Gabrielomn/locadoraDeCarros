@@ -13,7 +13,7 @@
 	( V )	 Deve ser possivel reservar um carro que esteja alugado no momento.
 	( V ) Existe um numero limitado de veiculos e esse numero eh menor que o numero de clientes
 	( V ) Um veiculo so pode ser alugado por um unico cliente por vez
-	( ? ) Depois que o carro eh devolvido ele passa por uma limpeza antes de ser alugado novamente.
+	( V ) Depois que o carro eh devolvido ele passa por uma limpeza antes de ser alugado novamente.
 	
 */
 
@@ -85,7 +85,7 @@ fact {
 	all c:ClienteCadastrado | one c.~clientes
 
 	--Cada cliente so pode ter 3 carros alugados
-	all a:ClienteCadastrado | #(a.alugados) <= 3
+	all a:ClienteCadastrado | #(carrosAlugados[a]) <= 3
 	
 	--Cada cliente tem um nome unico
 	all n:Nome | one n.~nome
@@ -96,12 +96,11 @@ fact {
 	--Numero de carros eh menor que o numero de Clientes
 	(#(Locadora.carros)) < (#ClienteCadastrado)
 
-	/*nao tenho ctz se isso ta funcionando como deveria, mas eh para garantir que todos os carros importados
-	so sao alugados por clientes vip.*/
+	--Apenas clientes vip podem alugar carros importados
 	all c:Carro | (ehImportado[c] and estaAlugado[c]) implies ehVip[clienteQueAlugou[c]]
 
 	--Um Cliente eh VIP se, e somente se, tiver mais de dois carros alugados.
-	all c:ClienteCadastrado | #(c.alugados) >= 2 implies ehVip[c]
+	all c:ClienteCadastrado | #(carrosAlugados[c]) >= 2 implies ehVip[c]
 
 	--Apenas clientes nao cadastrados podem se cadastrar, e clientes ja cadastrados nao podem se cadastrar
 	all c:Cliente | (ehCadastrado[c]) implies (#(c.cadastrar) = 0)
@@ -119,7 +118,7 @@ fact {
 	all r:Reserva | !naoEhReservaDeImportado[r] implies ehVip[r.~reservas]
 
 	--Quando o carro é devolvido ele é limpo
-	all d:Devolucao | (#(d.carro.limpo) = 1)
+	all d:Devolucao | (#(estadoDeCarroDevolvido[d]) = 1)
 
 }
 
@@ -165,6 +164,29 @@ fun clienteQueAlugou[carro: Carro]:one Cliente{
 	(carro.~carroAlugado).~alugados
 }
 
+fun carrosAlugados[cliente: ClienteCadastrado]: set Aluguel{
+	(cliente.alugados)
+}
+
+fun estadoDeCarroDevolvido[devolucao: Devolucao]: one Limpo{
+	devolucao.carro.limpo
+}
+
+assert todoClienteTemNoMaximoTresAlugueis{
+	all c:ClienteCadastrado | #carrosAlugados[c] <= 3
+}
+
+assert todoCarroReservadoEstaAlugado{
+	all r:Reserva | estaAlugado[r.reservado]
+}
+
+assert todoCarroImportadoSoEstaAlugadoPorClienteVipOuNaoEstaAlugado{
+	all c:CarroImportado | no c.~carroAlugado || ehVip[clienteQueAlugou[c]]
+}
+
+check todoCarroImportadoSoEstaAlugadoPorClienteVipOuNaoEstaAlugado for 5
+check todoCarroReservadoEstaAlugado for 5
+check todoClienteTemNoMaximoTresAlugueis for 5
 
 pred show[]{}
 run show for 9
